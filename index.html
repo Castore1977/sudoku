@@ -139,6 +139,16 @@
             color: #b91c1c;
         }
 
+        /* New animation for completion */
+        @keyframes flash-green {
+            0%, 100% { background-color: #d1fae5; }
+            50% { background-color: #10b981; }
+        }
+
+        .flash-green {
+            animation: flash-green 1s ease-in-out;
+        }
+
         .controls {
             margin-top: 20px;
             display: flex;
@@ -400,6 +410,81 @@
                     remainingNumbersContainer.classList.remove('visible');
                 }
             };
+            
+            const checkAutoCompletion = () => {
+                // Check rows
+                for (let i = 0; i < 9; i++) {
+                    const emptyCells = [];
+                    for (let j = 0; j < 9; j++) {
+                        if (currentBoard[i][j] === 0) {
+                            emptyCells.push({ row: i, col: j });
+                        }
+                    }
+                    if (emptyCells.length === 1) {
+                        const missingNum = [1, 2, 3, 4, 5, 6, 7, 8, 9].find(n => !currentBoard[i].includes(n));
+                        if (missingNum) {
+                            const cell = grid.querySelector(`.cell[data-row="${emptyCells[0].row}"][data-col="${emptyCells[0].col}"]`);
+                            currentBoard[emptyCells[0].row][emptyCells[0].col] = missingNum;
+                            cell.textContent = missingNum;
+                            cell.classList.remove('user-input');
+                            validateBoard();
+                            checkCompletion();
+                        }
+                    }
+                }
+
+                // Check columns
+                for (let j = 0; j < 9; j++) {
+                    const emptyCells = [];
+                    const colArr = [];
+                    for (let i = 0; i < 9; i++) {
+                        if (currentBoard[i][j] === 0) {
+                            emptyCells.push({ row: i, col: j });
+                        }
+                        colArr.push(currentBoard[i][j]);
+                    }
+                    if (emptyCells.length === 1) {
+                        const missingNum = [1, 2, 3, 4, 5, 6, 7, 8, 9].find(n => !colArr.includes(n));
+                        if (missingNum) {
+                            const cell = grid.querySelector(`.cell[data-row="${emptyCells[0].row}"][data-col="${emptyCells[0].col}"]`);
+                            currentBoard[emptyCells[0].row][emptyCells[0].col] = missingNum;
+                            cell.textContent = missingNum;
+                            cell.classList.remove('user-input');
+                            validateBoard();
+                            checkCompletion();
+                        }
+                    }
+                }
+                
+                // Check 3x3 boxes
+                for (let boxRow = 0; boxRow < 3; boxRow++) {
+                    for (let boxCol = 0; boxCol < 3; boxCol++) {
+                        const emptyCells = [];
+                        const boxArr = [];
+                        for (let i = 0; i < 3; i++) {
+                            for (let j = 0; j < 3; j++) {
+                                const row = boxRow * 3 + i;
+                                const col = boxCol * 3 + j;
+                                if (currentBoard[row][col] === 0) {
+                                    emptyCells.push({ row, col });
+                                }
+                                boxArr.push(currentBoard[row][col]);
+                            }
+                        }
+                        if (emptyCells.length === 1) {
+                            const missingNum = [1, 2, 3, 4, 5, 6, 7, 8, 9].find(n => !boxArr.includes(n));
+                            if (missingNum) {
+                                const cell = grid.querySelector(`.cell[data-row="${emptyCells[0].row}"][data-col="${emptyCells[0].col}"]`);
+                                currentBoard[emptyCells[0].row][emptyCells[0].col] = missingNum;
+                                cell.textContent = missingNum;
+                                cell.classList.remove('user-input');
+                                validateBoard();
+                                checkCompletion();
+                            }
+                        }
+                    }
+                }
+            };
 
             const startNewGame = () => {
                 currentBoard = generateSudoku(difficulties[difficulty]);
@@ -463,6 +548,70 @@
                 });
             };
 
+            const checkCompletion = () => {
+                const checkSection = (arr) => {
+                    const filled = arr.filter(n => n !== 0);
+                    if (filled.length === 9) {
+                        const unique = new Set(filled);
+                        return unique.size === 9;
+                    }
+                    return false;
+                };
+
+                const flashCells = (cells) => {
+                    cells.forEach(cell => {
+                        cell.classList.add('flash-green');
+                    });
+                    setTimeout(() => {
+                        cells.forEach(cell => {
+                            cell.classList.remove('flash-green');
+                        });
+                    }, 1000);
+                };
+
+                // Check rows
+                for (let i = 0; i < 9; i++) {
+                    if (checkSection(currentBoard[i])) {
+                        const rowCells = [];
+                        for (let j = 0; j < 9; j++) {
+                            rowCells.push(grid.querySelector(`.cell[data-row="${i}"][data-col="${j}"]`));
+                        }
+                        flashCells(rowCells);
+                    }
+                }
+
+                // Check columns
+                for (let j = 0; j < 9; j++) {
+                    const colArr = currentBoard.map(row => row[j]);
+                    if (checkSection(colArr)) {
+                        const colCells = [];
+                        for (let i = 0; i < 9; i++) {
+                            colCells.push(grid.querySelector(`.cell[data-row="${i}"][data-col="${j}"]`));
+                        }
+                        flashCells(colCells);
+                    }
+                }
+
+                // Check 3x3 boxes
+                for (let boxRow = 0; boxRow < 3; boxRow++) {
+                    for (let boxCol = 0; boxCol < 3; boxCol++) {
+                        const boxArr = [];
+                        const boxCells = [];
+                        for (let i = 0; i < 3; i++) {
+                            for (let j = 0; j < 3; j++) {
+                                const row = boxRow * 3 + i;
+                                const col = boxCol * 3 + j;
+                                boxArr.push(currentBoard[row][col]);
+                                boxCells.push(grid.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`));
+                            }
+                        }
+                        if (checkSection(boxArr)) {
+                            flashCells(boxCells);
+                        }
+                    }
+                }
+            };
+
             const handleCellClick = (event) => {
                 if (selectedCell) {
                     selectedCell.classList.remove('selected');
@@ -491,11 +640,14 @@
                     currentBoard[row][col] = number;
                     selectedCell.textContent = number;
                     validateBoard();
+                    checkCompletion();
+                    checkAutoCompletion();
                     updateRemainingNumbers(row, col);
                 } else if (event.key === 'Backspace' || event.key === 'Delete') {
                     currentBoard[row][col] = 0;
                     selectedCell.textContent = '';
                     validateBoard();
+                    checkCompletion();
                     updateRemainingNumbers(row, col);
                 }
             };
@@ -510,6 +662,8 @@
                 currentBoard[row][col] = number;
                 selectedCell.textContent = number;
                 validateBoard();
+                checkCompletion();
+                checkAutoCompletion();
                 updateRemainingNumbers(row, col);
             };
 
