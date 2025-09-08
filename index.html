@@ -232,11 +232,10 @@
             <h1>Sudoku</h1>
             <p>Seleziona una difficoltà per iniziare a giocare.</p>
             <div class="difficulty-selection">
-                <button class="difficulty-btn" data-difficulty="0">Molto Facile</button>
-                <button class="difficulty-btn" data-difficulty="1">Facile</button>
-                <button class="difficulty-btn" data-difficulty="2">Medio</button>
-                <button class="difficulty-btn" data-difficulty="3">Difficile</button>
-                <button class="difficulty-btn" data-difficulty="4">Molto Difficile</button>
+                <button class="difficulty-btn" data-difficulty="0">Facile</button>
+                <button class="difficulty-btn" data-difficulty="1">Medio</button>
+                <button class="difficulty-btn" data-difficulty="2">Difficile</button>
+                <button class="difficulty-btn" data-difficulty="3">Molto Difficile</button>
             </div>
         </div>
 
@@ -261,7 +260,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const difficulties = [50, 45, 40, 35, 30];
+            const difficulties = [40, 50, 60, 64]; // Number of cells to remove
             const grid = document.getElementById('sudoku-grid');
             const gameArea = document.getElementById('game-area');
             const welcomeScreen = document.getElementById('welcome-screen');
@@ -346,14 +345,17 @@
             };
 
             const removeNumbers = (board, count) => {
-                let toRemove = count;
-                while (toRemove > 0) {
-                    let row = Math.floor(Math.random() * 9);
-                    let col = Math.floor(Math.random() * 9);
-                    if (board[row][col] !== 0) {
-                        board[row][col] = 0;
-                        toRemove--;
+                const filledCells = [];
+                for (let i = 0; i < 9; i++) {
+                    for (let j = 0; j < 9; j++) {
+                        filledCells.push([i, j]);
                     }
+                }
+                shuffle(filledCells);
+
+                for (let i = 0; i < count; i++) {
+                    const [row, col] = filledCells[i];
+                    board[row][col] = 0;
                 }
             };
 
