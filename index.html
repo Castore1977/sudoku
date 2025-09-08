@@ -123,7 +123,13 @@
             font-weight: bold;
             color: #1e293b;
         }
-
+        
+        /* New styling for user-entered numbers */
+        .cell.user-input {
+            color: #2563eb;
+            font-weight: bold;
+        }
+        
         .cell.selected {
             background-color: #93c5fd;
         }
@@ -404,44 +410,57 @@
                 selectedCell = null;
             };
             
-            const clearErrors = () => {
-                document.querySelectorAll('.cell.error').forEach(cell => {
-                    cell.classList.remove('error');
+            const validateBoard = () => {
+                document.querySelectorAll('.cell:not(.fixed)').forEach(cell => {
+                    cell.classList.remove('error', 'user-input');
                 });
-            };
 
-            const validateInput = (row, col) => {
-                clearErrors();
-                const num = currentBoard[row][col];
-                if (num === 0) return;
+                const errorCells = new Set();
+                for (let row = 0; row < 9; row++) {
+                    for (let col = 0; col < 9; col++) {
+                        const num = currentBoard[row][col];
+                        if (num === 0) continue;
 
-                // Check row
-                for (let i = 0; i < 9; i++) {
-                    if (i !== col && currentBoard[row][i] === num) {
-                        document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`).classList.add('error');
-                        document.querySelector(`.cell[data-row="${row}"][data-col="${i}"]`).classList.add('error');
-                    }
-                }
-
-                // Check column
-                for (let i = 0; i < 9; i++) {
-                    if (i !== row && currentBoard[i][col] === num) {
-                        document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`).classList.add('error');
-                        document.querySelector(`.cell[data-row="${i}"][data-col="${col}"]`).classList.add('error');
-                    }
-                }
-
-                // Check 3x3 box
-                const startRow = Math.floor(row / 3) * 3;
-                const startCol = Math.floor(col / 3) * 3;
-                for (let i = 0; i < 3; i++) {
-                    for (let j = 0; j < 3; j++) {
-                        if ((startRow + i !== row || startCol + j !== col) && currentBoard[startRow + i][startCol + j] === num) {
-                            document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`).classList.add('error');
-                            document.querySelector(`.cell[data-row="${startRow + i}"][data-col="${startCol + j}"]`).classList.add('error');
+                        // Check row for duplicates
+                        for (let i = 0; i < 9; i++) {
+                            if (i !== col && currentBoard[row][i] === num) {
+                                errorCells.add(`${row}-${col}`);
+                                errorCells.add(`${row}-${i}`);
+                            }
+                        }
+                        // Check column for duplicates
+                        for (let i = 0; i < 9; i++) {
+                            if (i !== row && currentBoard[i][col] === num) {
+                                errorCells.add(`${row}-${col}`);
+                                errorCells.add(`${i}-${col}`);
+                            }
+                        }
+                        // Check 3x3 box for duplicates
+                        const boxStartRow = Math.floor(row / 3) * 3;
+                        const boxStartCol = Math.floor(col / 3) * 3;
+                        for (let i = 0; i < 3; i++) {
+                            for (let j = 0; j < 3; j++) {
+                                if ((boxStartRow + i !== row || boxStartCol + j !== col) && currentBoard[boxStartRow + i][boxStartCol + j] === num) {
+                                    errorCells.add(`${row}-${col}`);
+                                    errorCells.add(`${boxStartRow + i}-${boxStartCol + j}`);
+                                }
+                            }
                         }
                     }
                 }
+
+                document.querySelectorAll('.cell:not(.fixed)').forEach(cell => {
+                    const row = cell.dataset.row;
+                    const col = cell.dataset.col;
+                    const cellId = `${row}-${col}`;
+                    if (currentBoard[row][col] !== 0) {
+                        if (errorCells.has(cellId)) {
+                            cell.classList.add('error');
+                        } else {
+                            cell.classList.add('user-input');
+                        }
+                    }
+                });
             };
 
             const handleCellClick = (event) => {
@@ -471,12 +490,12 @@
                     const number = parseInt(event.key);
                     currentBoard[row][col] = number;
                     selectedCell.textContent = number;
-                    validateInput(row, col);
+                    validateBoard();
                     updateRemainingNumbers(row, col);
                 } else if (event.key === 'Backspace' || event.key === 'Delete') {
                     currentBoard[row][col] = 0;
                     selectedCell.textContent = '';
-                    clearErrors();
+                    validateBoard();
                     updateRemainingNumbers(row, col);
                 }
             };
@@ -490,7 +509,7 @@
 
                 currentBoard[row][col] = number;
                 selectedCell.textContent = number;
-                validateInput(row, col);
+                validateBoard();
                 updateRemainingNumbers(row, col);
             };
 
@@ -503,11 +522,12 @@
                             isCorrect = false;
                             if (currentBoard[i][j] !== 0) {
                                 cell.classList.add('error');
+                                cell.classList.remove('user-input');
                             } else {
-                                cell.classList.remove('error');
+                                cell.classList.remove('error', 'user-input');
                             }
                         } else {
-                            cell.classList.remove('error');
+                            cell.classList.remove('error', 'user-input');
                         }
                     }
                 }
@@ -527,6 +547,7 @@
                             currentBoard[i][j] = solutionBoard[i][j];
                         }
                         cell.classList.remove('error');
+                        cell.classList.remove('user-input');
                         cell.classList.remove('selected');
                     }
                 }
